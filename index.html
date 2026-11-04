@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从 RPA 到 AI Agent · 实战笔记（支一郎）</title>
+<meta name="description" content="支一郎 — 一年多影刀 RPA 接单 + GPT-4 实战，拆成 5 节能直接抄的作业：RPA 与 AI 的分水岭、影刀自动化、给 RPA 装大脑、从脚本到 Agent、作品集接单变现。">
+<style>
+  :root{--bg:#f7f8fa;--card:#fff;--fg:#1f2933;--muted:#5b6776;--accent:#1f6feb;--accent2:#0f9d58;--border:#e3e8ef;--shadow:0 1px 3px rgba(16,24,40,.06)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--fg);line-height:1.7}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:860px;margin:0 auto;padding:0 20px}
+  header{padding:54px 0 30px;text-align:center;background:linear-gradient(160deg,#e8f0fe 0%,var(--bg) 70%)}
+  header h1{font-size:2rem}
+  header .sub{color:var(--accent);font-weight:600;margin-top:8px}
+  section{padding:34px 0;border-bottom:1px solid var(--border)}
+  h2{font-size:1.35rem;margin-bottom:10px}
+  h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;width:30px;height:30px;line-height:30px;text-align:center;margin-right:10px;font-size:1rem}
+  p.lead{color:var(--muted);margin:8px 0 16px}
+  pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:16px;overflow-x:auto;font-size:.84rem;font-family:"SFMono-Regular",Consolas,monospace;margin:12px 0}
+  code{background:#eef2f7;padding:1px 6px;border-radius:5px;font-size:.88em;color:#b91c1c}
+  pre code{background:none;padding:0;color:inherit}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);margin:12px 0}
+  .tag{display:inline-block;background:#e8f0fe;color:var(--accent);border-radius:6px;padding:2px 8px;font-size:.75rem;font-weight:600;margin:2px 4px 2px 0}
+  .take{background:#ecfdf5;border-left:4px solid var(--accent2);padding:12px 16px;border-radius:8px;margin:14px 0;color:#065f46}
+  .cta{text-align:center;padding:40px 0}
+  .btn{display:inline-block;margin:8px;padding:13px 26px;border-radius:10px;font-weight:600}
+  .btn.pink{background:#fb7299;color:#fff}
+  .btn.primary{background:var(--accent);color:#fff}
+  footer{padding:26px 0;text-align:center;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>从 RPA 到 AI Agent · 实战笔记</h1>
+    <div class="sub">支一郎 (Zhiyilang) · 影刀 RPA 接单 → AI Agent 工程</div>
+    <p class="lead" style="margin-top:10px">一年多影刀 RPA 接单经验 + GPT-4 实战，拆成 5 节能直接抄的作业。不讲虚的，全是代码、模板和真实复盘。</p>
+  </div>
+</header>
+
+<section class="wrap" id="l1">
+  <h2><span class="num">1</span>分水岭：RPA 与 AI 到底差在哪</h2>
+  <p class="lead">先想清楚边界，才知道什么时候该用 RPA、什么时候该上 AI。</p>
+  <div class="card">
+    <p><b>RPA 解决「重复」</b>：流程固定、规则明确、界面/数据格式稳定。比如：每天把 3 个分店的销售表合并成一个总表、把固定格式的发票信息录入系统。</p>
+    <p style="margin-top:10px"><b>AI 解决「不确定」</b>：输入千变万化、需要理解语义、做判断。比如：客户发来一段自由文本要你提取关键信息、一张截图里找出金额。</p>
+    <p style="margin-top:10px">两者不是替代关系，是<b>接力</b>：RPA 负责"搬数据、点按钮"，AI 负责"看懂、判断、生成"。</p>
+  </div>
+  <p>判断口诀：<span class="tag">格式固定 → RPA</span><span class="tag">要理解语义 → AI</span><span class="tag">两者交界 → RPA 抓取 + AI 处理</span></p>
+  <div class="take">✅ 接单第一课：客户说"帮我自动化"，先问他"这事儿每次长得一样吗"。不一样的部分，就是 AI 的活。</div>
+</section>
+
+<section class="wrap" id="l2">
+  <h2><span class="num">2</span>影刀实战：把周报/对账/爬数据自动化</h2>
+  <p class="lead">三个最常见、最易成交的 RPA 场景，附最小可跑思路。</p>
+  <div class="card">
+    <p><b>① 多表合并（周报底座）</b>：读 N 个同结构 Excel → 按主键合并去重 → 输出总表。核心是"不靠 Excel 公式，用脚本"，避免大文件卡死。</p>
+    <pre><code># 伪代码（真实版见 excel-deliver-kit）
+rows = []
+for f in glob("分店/*.xlsx"):
+    rows += read_sheet(f)          # 读
+merged = dedupe_by_key(rows, "订单号")  # 去重
+write_sheet(merged, "总表.xlsx")      # 写</code></pre>
+    <p><b>② 双表对账</b>：两张表按主键比对，输出"仅A/仅B/数值不一致"三类。财务、订单核对刚需。</p>
+    <p><b>③ 网页爬数据</b>：影刀"网页元素"拾取 → 循环翻页抓取 → 落 Excel。注意只抓公开数据、遵守 robots。</p>
+  </div>
+  <p><span class="tag">零依赖</span><span class="tag">可复现</span><span class="tag">大文件不卡</span></p>
+  <div class="take">✅ 我把这类工具全做成 Python 标准库版（不装 pandas/openpyxl），客户电脑"丢进去就能跑，不会本地能跑线上崩"。这是我的卖点。</div>
+</section>
+
+<section class="wrap" id="l3">
+  <h2><span class="num">3</span>给 RPA 装大脑：GPT-4 + 函数调用</h2>
+  <p class="lead">非结构化数据（文本/截图/邮件）的处理，交给 LLM；RPA 只负责拿数据和回写。</p>
+  <div class="card">
+    <p>最小可跑模板：把一段自由文本 + 一个 JSON Schema 丢给模型，让它返回结构化结果，再用 RPA 回写系统。</p>
+    <pre><code>import openai
+resp = openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role":"user","content":f"从下面提取订单信息：\n{raw_text}"}],
+    functions=[{                       # 定义"能调用的工具"
+      "name":"save_order",
+      "parameters":{"type":"object","properties":{
+        "订单号":{"type":"string"},"金额":{"type":"number"},"客户":{"type":"string"}}}
+    }],
+)
+order = resp.choices[0].message.function_call.arguments
+# → 交给 RPA 回写到 ERP</code></pre>
+    <p style="margin-top:10px"><b>三个避坑</b>：① 永远让他返回 JSON 而不是自然语言；② 金额/日期做格式校验；③ 失败要有兜底默认，别让流程卡死。</p>
+  </div>
+  <div class="take">✅ "装大脑"的本质 = RPA 当手、LLM 当脑、函数调用当接口。先把接口（Schema）定义清楚，比调模型更重要。</div>
+</section>
+
+<section class="wrap" id="l4">
+  <h2><span class="num">4</span>从脚本到 Agent：工具调用与编排</h2>
+  <p class="lead">单个脚本能干活；多个工具 + 一个"调度者"能解决多步任务 —— 这就是 Agent。</p>
+  <div class="card">
+    <p>以我开源的 <code>quorumpilot</code> 为例：四智能体仲裁框架，把"交易前评审"拆成 4 个角色（策略/风控/合规/裁决），各自持工具，最后投票。</p>
+    <pre><code># Agent 编排最小骨架
+planner  → 拆解任务为步骤
+worker   → 每步调用一个工具（搜索/计算/读文件）
+critic   → 校验每步输出是否合理
+arbiter  → 汇总，决定继续 or 回退
+
+# 关键：每个工具都是"零依赖、可断言"的函数
+def tool_reconcile(a, b, key): ...   # 复用第2节的核对内核
+def tool_web_search(q): ...</code></pre>
+    <p style="margin-top:10px">做 Agent 不一定要大模型框架。把"工具函数 + 一个循环 + 一个判断"写好，就是最稳的 Agent。</p>
+  </div>
+  <p><span class="tag">quorumpilot</span><span class="tag">工具即函数</span><span class="tag">可断言可复现</span></p>
+  <div class="take">✅ 别一上来追时髦框架。先把"一个能复用的工具函数库"沉淀好（我已有 30+ 个），Agent 只是把它们编排起来。</div>
+</section>
+
+<section class="wrap" id="l5">
+  <h2><span class="num">5</span>作品集 + 接单：34 个工具怎么变成钱</h2>
+  <p class="lead">工具不是终点，是信任凭证和引流钩子。变现有四条路，按启动成本从低到高：</p>
+  <div class="card">
+    <p><b>① 爱发电/打赏</b>（启动 5 分钟）：开源仓库挂赞助链接，有人用得爽就请杯咖啡。GitHub Sponsors 大陆个人不可用，用爱发电替代。</p>
+    <p><b>② 数字商品</b>（面包多/UiBot Store）：把工具打包成"一键可用"的商品，一次性售卖或被动分润。例：工资核算器 ¥9.9、CSV 合并 ¥6.6。</p>
+    <p><b>③ 服务接单</b>（闲鱼/直客）：用工具当底层引擎，按次交付 Excel/数据自动化，钱直接进支付宝。</p>
+    <p><b>④ 企业定制</b>（长期）：多 Sheet、跨系统、数据库直连的定制开发，走月费 ¥300 起。</p>
+  </div>
+  <p><span class="tag">信任凭证</span><span class="tag">引流钩子</span><span class="tag">被动+主动</span></p>
+  <div class="take">✅ 报价心法：先免费/低价出 3 单换好评，再把重复环节用工具压到 5–15 分钟交付，规模化接单。工具越多，交付越快，毛利越高。</div>
+</section>
+
+<section class="cta wrap" id="support">
+  <h2>如果这份笔记对你有用</h2>
+  <p>全部工具 MIT 开源可商用。笔记免费公开，欢迎取用；若帮你省了时间，欢迎请我喝杯咖啡 ☕</p>
+  <a class="btn pink" href="https://afdian.com/a/Zhiyilang" target="_blank" rel="noopener">❤️ 爱发电赞助支持</a>
+  <a class="btn primary" href="https://github.com/Zhiyilang?tab=repositories" target="_blank" rel="noopener">⭐ 看全部开源工具</a>
+  <p style="margin-top:12px;color:var(--muted);font-size:.85rem">所有仓库 MIT 开源可商用；赞助统一走爱发电（GitHub Sponsors 大陆暂不支持个人账号）。</p>
+</section>
+
+<footer>
+  © 2026 支一郎 (Zhiyilang) · 从 RPA 到 AI Agent · 用 WorkBuddy 自动生成
+</footer>
+</body>
+</html>
